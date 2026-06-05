@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <title>John Mart — Admin Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --moss:      #2d5016;
+      --moss-mid:  #4a7c2e;
+      --moss-lt:   #8ab56a;
+      --cream:     #faf6ef;
+      --warm:      #f2ead8;
+      --vinyl:     #1a1208;
+      --gold:      #c9a84c;
+      --gold-lt:   #e8c96a;
+      --red:       #c0392b;
+      --red-lt:    #e74c3c;
+      --text:      #2a2018;
+      --text-2:    #5a4e3a;
+      --border:    #ddd4be;
+      --radius:    12px;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f0f2f5;
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .hide { display: none !important; }
+
+    /* ── LOGIN SCREEN ── */
+    #login-screen {
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--vinyl) 0%, #2a1e10 55%, #1a3008 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      position: relative; overflow: hidden;
+    }
+    #login-screen::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='40' cy='40' r='36' fill='none' stroke='rgba(201,168,76,0.07)' stroke-width='2'/%3E%3Ccircle cx='40' cy='40' r='22' fill='none' stroke='rgba(201,168,76,0.05)' stroke-width='1'/%3E%3Ccircle cx='40' cy='40' r='8' fill='none' stroke='rgba(201,168,76,0.06)' stroke-width='1'/%3E%3C/svg%3E");
+      background-size: 80px 80px;
+    }
+    .login-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 44px 40px;
+      width: min(440px, 96vw);
+      text-align: center;
+      box-shadow: 0 32px 72px rgba(0,0,0,0.45);
+      position: relative; z-index: 1;
+    }
+    .login-disc {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: conic-gradient(var(--vinyl) 0deg,#3a3020 60deg,var(--vinyl) 120deg,#2e2518 180deg,var(--vinyl) 240deg,#3a3020 300deg,var(--vinyl) 360deg);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      animation: spin 6s linear infinite;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.3);
+    }
+    .login-disc::after {
+      content: ''; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--gold); border: 3px solid #fff;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .login-badge {
+      display: inline-block; background: #fff7e0; color: #7a5500;
+      border: 1px solid #f5d06a; border-radius: 20px;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 4px 14px; margin-bottom: 14px;
+    }
+    .login-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px; font-weight: 900; color: var(--vinyl); margin-bottom: 6px;
+    }
+    .login-sub { font-size: 13px; color: var(--text-2); margin-bottom: 30px; }
+    .login-error {
+      background: #fff1f0; color: var(--red); border: 1px solid #ffd6d2;
+      border-radius: 10px; padding: 11px 16px; font-size: 13px; font-weight: 600;
+      margin-bottom: 18px; display: none; text-align: left;
+    }
+    .login-field { margin-bottom: 16px; text-align: left; }
+    .login-field label {
+      display: block; font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--text-2); margin-bottom: 7px;
+    }
+    .login-field input {
+      width: 100%; padding: 13px 16px; border: 1.5px solid var(--border);
+      border-radius: 11px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+      color: var(--text); transition: all var(--transition); background: var(--warm);
+    }
+    .login-field input:focus {
+      outline: none; border-color: var(--moss); background: #fff;
+      box-shadow: 0 0 0 4px rgba(45,80,22,0.1);
+    }
+    .login-btn {
+      width: 100%; padding: 14px; background: var(--moss); color: #fff;
+      border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 800; cursor: pointer;
+      transition: all var(--transition); margin-top: 4px;
+      box-shadow: 0 4px 16px rgba(45,80,22,0.3);
+    }
+    .login-btn:hover { background: var(--moss-mid); transform: translateY(-2px); }
+    .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .login-lock-note {
+      margin-top: 20px; font-size: 12px; color: #bbb;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    /* ── ADMIN SHELL ── */
+    #admin-screen { min-height: 100vh; }
+
+    /* Top bar */
+    .admin-topbar {
+      background: var(--vinyl);
+      padding: 0 30px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 58px; position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+    }
+    .admin-topbar-left { display: flex; align-items: center; gap: 14px; }
+    .topbar-disc {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: conic-gradient(var(--vinyl) 0deg,#3a3020 60deg,var(--vinyl) 120deg,#2e2518 180deg,var(--vinyl) 240deg,#3a3020 300deg,var(--vinyl) 360deg);
+      display: flex; align-items: center; justify-content: center;
+      animation: spin 6s linear infinite; flex-shrink: 0;
+    }
+    .topbar-disc::after { content:''; width:8px;height:8px;border-radius:50%;background:var(--gold);border:2px solid #fff; }
+    .topbar-brand { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 900; color: #fff; }
+    .topbar-brand span { color: var(--gold-lt); }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .topbar-user { font-size: 12px; color: rgba(255,255,255,0.55); }
+    .topbar-signout {
+      padding: 7px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.75);
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .topbar-signout:hover { background: rgba(192,57,43,0.3); border-color: rgba(192,57,43,0.5); color: #ff9f9f; }
+
+    /* Nav tabs */
+    .admin-nav {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: 0 30px; display: flex; gap: 4px;
+    }
+    .admin-nav-tab {
+      padding: 14px 20px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+      font-weight: 600; color: var(--text-2); background: none; border: none;
+      cursor: pointer; border-bottom: 3px solid transparent;
+      transition: all var(--transition);
+    }
+    .admin-nav-tab:hover { color: var(--moss); }
+    .admin-nav-tab.active { color: var(--moss); border-bottom-color: var(--moss); }
+
+    /* Content area */
+    .admin-content { padding: 30px; max-width: 1200px; margin: 0 auto; }
+
+    /* ── STAT CARDS ── */
+    .stat-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px; margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 20px 22px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
+      display: flex; align-items: center; gap: 14px;
+    }
+    .stat-icon {
+      width: 46px; height: 46px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .si-green { background: #f0fdf4; }
+    .si-blue  { background: #eff6ff; }
+    .si-amber { background: #fffbeb; }
+    .si-red   { background: #fef2f2; }
+    .stat-val { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 900; color: var(--text); line-height: 1; }
+    .stat-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-2); margin-top: 4px; }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      background: #fff; border-radius: 14px; padding: 14px 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.04);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .toolbar-search { flex: 1; min-width: 200px; position: relative; }
+    .toolbar-search input {
+      width: 100%; padding: 10px 16px 10px 38px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
+      background: var(--warm); transition: all var(--transition);
+    }
+    .toolbar-search input:focus { outline: none; border-color: var(--moss); background: #fff; box-shadow: 0 0 0 4px rgba(45,80,22,0.1); }
+    .toolbar-search::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; opacity: 0.5; }
+    .toolbar-div { width: 1px; height: 28px; background: var(--border); }
+
+    .btn { padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; transition: all var(--transition); display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; font-family: 'DM Sans', sans-serif; }
+    .btn-primary { background: var(--moss); color: #fff; box-shadow: 0 2px 8px rgba(45,80,22,0.25); }
+    .btn-primary:hover { background: var(--moss-mid); transform: translateY(-2px); }
+    .btn-secondary { background: var(--warm); color: var(--text); border: 1.5px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-danger { background: #fff1f0; color: var(--red); border: 1.5px solid #ffa39e; }
+    .btn-danger:hover { background: #ffe4e2; }
+    .btn-gold { background: var(--gold); color: var(--vinyl); }
+    .btn-gold:hover { background: var(--gold-lt); transform: translateY(-2px); }
+    .btn-sm { padding: 7px 13px; font-size: 12px; border-radius: 8px; }
+
+    /* ── TABLE CARD ── */
+    .table-card {
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.04);
+      overflow: hidden;
+    }
+    .table-card-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    }
+    .table-card-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--text); }
+    .table-count { font-size: 12px; font-weight: 700; background: var(--warm); color: var(--text-2); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 780px; }
+    thead th {
+      background: #f8f9fa; padding: 12px 16px; text-align: left;
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--text-2);
+      border-bottom: 1px solid var(--border);
+    }
+    tbody td { padding: 13px 16px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; font-size: 14px; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background 0.12s; }
+    tbody tr:hover td { background: #fafbfc; }
+    .thumb { width: 46px; height: 46px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); }
+    .thumb-placeholder { width: 46px; height: 46px; border-radius: 10px; background: linear-gradient(135deg, var(--vinyl), #3a3020); display: inline-flex; align-items: center; justify-content: center; font-size: 18px; }
+    .prod-name { font-weight: 700; color: var(--text); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prod-id { display: block; font-size: 11px; font-weight: 400; color: var(--text-2); margin-top: 2px; }
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-cat  { background: #e6f7ff; color: #1890ff; }
+    .badge-lang { background: #f9f0ff; color: #722ed1; }
+    .badge-in   { background: #f6ffed; color: #52c41a; }
+    .badge-oos  { background: #fff1f0; color: var(--red); }
+    .price-text { font-family: 'Playfair Display', serif; font-weight: 800; color: var(--moss); }
+    .row-actions { display: flex; gap: 8px; }
+    .empty-state { padding: 60px 20px; text-align: center; }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .empty-msg { font-size: 14px; color: var(--text-2); }
+
+    /* ── ADD PRODUCT FORM ── */
+    .form-card {
+      background: #fff; border-radius: 16px; padding: 32px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
+    }
+    .form-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px; padding-bottom: 18px; border-bottom: 2px solid var(--warm);
+      flex-wrap: wrap; gap: 12px;
+    }
+    .form-card-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: var(--vinyl); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); margin-bottom: 8px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 12px 15px; border-radius: 10px; border: 1.5px solid var(--border);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
+      background: var(--warm); transition: all var(--transition);
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--moss); outline: none; background: #fff; box-shadow: 0 0 0 4px rgba(45,80,22,0.1);
+    }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .drop-zone {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 40px 20px;
+      text-align: center; cursor: pointer; transition: all var(--transition); background: #fafafa;
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--moss); background: #f0f7ea; }
+    .drop-zone i { font-size: 40px; display: block; margin-bottom: 10px; }
+    .preview-grid { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .preview-thumb { width: 80px; height: 80px; border-radius: 10px; overflow: hidden; position: relative; border: 1px solid var(--border); }
+    .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb-rm { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.55); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+    .alert { padding: 13px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; margin-top: 16px; display: none; }
+    .alert-success { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+    .alert-error   { background: #fff1f0; color: var(--red); border: 1px solid #ffa39e; }
+
+    /* ── DELETE CONFIRM ── */
+    .confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 600;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s ease; backdrop-filter: blur(4px);
+    }
+    .confirm-overlay.open { opacity: 1; pointer-events: auto; }
+    .confirm-box {
+      background: #fff; border-radius: 18px; padding: 34px 28px;
+      width: min(360px, 92vw); text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+      transform: translateY(16px) scale(0.97); opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.25s ease;
+    }
+    .confirm-overlay.open .confirm-box { transform: translateY(0) scale(1); opacity: 1; }
+    .confirm-icon { font-size: 46px; margin-bottom: 12px; }
+    .confirm-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .confirm-sub { font-size: 14px; color: var(--text-2); margin-bottom: 24px; line-height: 1.5; }
+    .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(100px);
+      background: var(--vinyl); color: #fff; padding: 12px 24px; border-radius: 50px;
+      font-weight: 600; font-size: 14px; z-index: 1000;
+      transition: all 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .admin-content { padding: 16px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .admin-topbar { padding: 0 16px; }
+      .admin-nav { padding: 0 16px; }
+      .topbar-user { display: none; }
+    }
+    @media (max-width: 480px) {
+      .form-row-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════ LOGIN SCREEN ════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-disc"></div>
+    <div class="login-badge">🔐 Owner Portal</div>
+    <div class="login-title">John Mart Admin</div>
+    <div class="login-sub">Restricted access — store owner only</div>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-field">
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In to Dashboard</button>
+    <div class="login-lock-note">🔒 This page is not linked from the public store</div>
+  </div>
+</div>
+
+<!-- ════════════ ADMIN SCREEN ════════════ -->
+<div id="admin-screen" class="hide">
+
+  <!-- Top Bar -->
+  <div class="admin-topbar">
+    <div class="admin-topbar-left">
+      <div class="topbar-disc"></div>
+      <div class="topbar-brand">John <span>Mart</span></div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbarUser"></span>
+      <button class="topbar-signout" onclick="doLogout()">🔓 Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Nav Tabs -->
+  <div class="admin-nav">
+    <button class="admin-nav-tab active" onclick="showTab('dashboard')" id="tab-dashboard">📊 Dashboard</button>
+    <button class="admin-nav-tab" onclick="showTab('add')" id="tab-add">➕ Add Product</button>
+  </div>
+
+  <!-- Content -->
+  <div class="admin-content">
+
+    <!-- ── DASHBOARD TAB ── -->
+    <div id="view-dashboard">
+
+      <!-- Stat Cards -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-icon si-green">📦</div>
+          <div><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Total Products</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-blue">✅</div>
+          <div><div class="stat-val" id="stat-instock">—</div><div class="stat-lbl">In Stock</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-red">⚠️</div>
+          <div><div class="stat-val" id="stat-oos">—</div><div class="stat-lbl">Out of Stock</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-amber">💰</div>
+          <div><div class="stat-val" id="stat-value">—</div><div class="stat-lbl">Inventory Value</div></div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="showTab('add')">➕ Add Product</button>
+        <div class="toolbar-div"></div>
+        <div class="toolbar-search">
+          <input type="text" id="searchInput" placeholder="Search by title, category, language…" oninput="renderTable(this.value)">
+        </div>
+        <div class="toolbar-div"></div>
+        <button class="btn btn-secondary" onclick="exportCSV()">📊 Export CSV</button>
+        <button class="btn btn-danger" onclick="clearAll()">🗑️ Clear All</button>
+      </div>
+
+      <!-- Product Table -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <span class="table-card-title">🎵 Product Inventory</span>
+          <span class="table-count" id="tableCount">0 items</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:58px;">Photo</th>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Language</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th style="width:120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /dashboard -->
+
+    <!-- ── ADD PRODUCT TAB ── -->
+    <div id="view-add" class="hide">
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="form-card-title">Add New Product</div>
+          <button class="btn btn-secondary" onclick="showTab('dashboard')">← Back to List</button>
+        </div>
+        <div class="form-grid">
+          <div>
+            <div class="form-group">
+              <label>Product Title *</label>
+              <input type="text" id="fTitle" placeholder="e.g. M.S. Subbulakshmi - Venkatesa Suprabhatam">
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea id="fDesc" rows="4" placeholder="Condition, year, tracklist, notes…"></textarea>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Category *</label>
+                <select id="fCategory" onchange="handleCatChange()">
+                  <option value="">Select Category</option>
+                  <option>Vinyl Records</option>
+                  <option>Audio Cassettes</option>
+                  <option>Audio CDs</option>
+                  <option>Video CDs</option>
+                  <option>Gramophone 78 RPM</option>
+                  <option>Accessories</option>
+                </select>
+              </div>
+              <div class="form-group" id="langGroup">
+                <label>Language *</label>
+                <select id="fLanguage">
+                  <option value="">Select Language</option>
+                  <option>Tamil</option>
+                  <option>Hindi</option>
+                  <option>Kannada</option>
+                  <option>Bengali</option>
+                  <option>English</option>
+                  <option>Sanskrit</option>
+                  <option>Malayalam</option>
+                  <option>Telugu</option>
+                  <option>Other</option>
+                  <option value="N/A">Not Applicable</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Price (₹) *</label>
+                <input type="number" id="fPrice" placeholder="0.00" min="0" step="0.01">
+              </div>
+              <div class="form-group">
+                <label>Stock Quantity *</label>
+                <input type="number" id="fStock" value="1" min="0">
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="form-group">
+              <label>Product Images *</label>
+              <div class="drop-zone" id="dropZone">
+                <i>📸</i>
+                <p>Drag & drop or <strong>click to browse</strong></p>
+                <span style="font-size:11px;color:#999;">Auto-compressed to under 300 KB · Max 5 photos</span>
+                <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
+              </div>
+              <div class="preview-grid" id="imgPreview"></div>
+            </div>
+            <div class="alert alert-success" id="alertSuccess">✓ Product added successfully!</div>
+            <div class="alert alert-error" id="alertError"></div>
+            <button class="btn btn-gold" id="submitBtn" onclick="handleUpload()" style="width:100%;margin-top:10px;padding:14px;font-size:15px;">💾 Save Product</button>
+          </div>
+        </div>
+      </div>
+    </div><!-- /add -->
+
+  </div><!-- /admin-content -->
+</div><!-- /admin-screen -->
+
+<!-- DELETE CONFIRM -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">Delete this product?</div>
+    <div class="confirm-sub">This action cannot be undone. The product will be permanently removed.</div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════
+   CONFIG
+══════════════════════════════════════ */
+const SUPABASE_URL      = "https://rtkwkxlwjqkhqwaxuqhe.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_HVC1sNnV62h22xc0t-e82w_N5nX2GKQ";
+const supabaseClient    = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 🔐 OWNER LOCK — only this email can access admin
+const ADMIN_OWNER_EMAIL = 'localgrow13@gmail.com';
+
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+let products = [];
+let pendingDeleteId = null;
+
+/* ══════════════════════════════════════
+   INIT — check if already logged in
+══════════════════════════════════════ */
+(async () => {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session && session.user.email.toLowerCase() === ADMIN_OWNER_EMAIL.toLowerCase()) {
+    enterAdmin(session.user.email);
+  }
+})();
+
+/* ══════════════════════════════════════
+   AUTH
+══════════════════════════════════════ */
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pwd   = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  const btn   = document.getElementById('loginBtn');
+
+  errEl.style.display = 'none';
+  if (!email || !pwd) {
+    errEl.textContent = 'Please enter your email and password.';
+    errEl.style.display = 'block'; return;
+  }
+
+  // Fast-reject non-owner emails
+  if (email !== ADMIN_OWNER_EMAIL.toLowerCase()) {
+    errEl.innerHTML = '🔒 Access restricted to the store owner only.';
+    errEl.style.display = 'block'; return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Signing in…';
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pwd });
+
+  btn.disabled = false; btn.textContent = 'Sign In to Dashboard';
+
+  if (error) {
+    errEl.textContent = '✗ ' + (error.message || 'Invalid credentials.');
+    errEl.style.display = 'block'; return;
+  }
+
+  // Double-check session email
+  if (data.user.email.toLowerCase() !== ADMIN_OWNER_EMAIL.toLowerCase()) {
+    await supabaseClient.auth.signOut();
+    errEl.textContent = '🔒 This account is not authorised.';
+    errEl.style.display = 'block'; return;
+  }
+
+  enterAdmin(data.user.email);
+}
+
+async function doLogout() {
+  await supabaseClient.auth.signOut();
+  document.getElementById('admin-screen').classList.add('hide');
+  document.getElementById('login-screen').classList.remove('hide');
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  toast('👋 Signed out');
+}
+
+function enterAdmin(email) {
+  document.getElementById('login-screen').classList.add('hide');
+  document.getElementById('admin-screen').classList.remove('hide');
+  document.getElementById('topbarUser').textContent = email;
+  loadProducts();
+}
+
+// Enter key on login fields
+['loginEmail','loginPassword'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+});
+
+/* ══════════════════════════════════════
+   TAB NAVIGATION
+══════════════════════════════════════ */
+function showTab(name) {
+  ['dashboard','add'].forEach(t => {
+    document.getElementById('view-' + t).classList.toggle('hide', t !== name);
+    document.getElementById('tab-' + t).classList.toggle('active', t === name);
+  });
+  if (name === 'dashboard') renderTable();
+  if (name === 'add') resetForm();
+}
+
+/* ══════════════════════════════════════
+   LOAD PRODUCTS
+══════════════════════════════════════ */
+async function loadProducts() {
+  const { data, error } = await supabaseClient
+    .from('products').select('*').order('id', { ascending: false });
+  if (error) { toast('⚠️ ' + error.message); return; }
+  products = data || [];
+  updateStats();
+  renderTable();
+}
+
+/* ══════════════════════════════════════
+   STATS
+══════════════════════════════════════ */
+function updateStats() {
+  const total   = products.length;
+  const inStock = products.filter(p => (parseInt(p.stock) || 0) > 0).length;
+  const oos     = products.filter(p => (parseInt(p.stock) || 0) === 0).length;
+  const value   = products.reduce((acc, p) => acc + (Number(p.price) * (parseInt(p.stock) || 0)), 0);
+
+  document.getElementById('stat-total').textContent   = total;
+  document.getElementById('stat-instock').textContent = inStock;
+  document.getElementById('stat-oos').textContent     = oos;
+  document.getElementById('stat-value').textContent   = '₹' + (
+    value >= 100000 ? (value/100000).toFixed(1)+'L' :
+    value >= 1000   ? (value/1000).toFixed(1)+'K'   :
+    value.toLocaleString('en-IN')
+  );
+}
+
+/* ══════════════════════════════════════
+   RENDER TABLE
+══════════════════════════════════════ */
+function renderTable(query) {
+  const q = (query ?? document.getElementById('searchInput')?.value ?? '').toLowerCase().trim();
+  const list = q
+    ? products.filter(p =>
+        (p.title || '').toLowerCase().includes(q) ||
+        (p.cat   || '').toLowerCase().includes(q) ||
+        (p.lang  || '').toLowerCase().includes(q))
+    : products;
+
+  document.getElementById('tableCount').textContent =
+    q ? `${list.length} of ${products.length} items` : `${products.length} items`;
+
+  const tbody = document.getElementById('productTbody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7">
+      <div class="empty-state">
+        <div class="empty-icon">${q ? '🔍' : '📦'}</div>
+        <div class="empty-title">${q ? 'No results found' : 'No products yet'}</div>
+        <div class="empty-msg">${q ? 'Try a different search term.' : 'Click "Add Product" to get started.'}</div>
+      </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(p => {
+    const stock = parseInt(p.stock) || 0;
+    const img = (p.images && p.images.length)
+      ? `<img class="thumb" src="${p.images[0]}" alt="" loading="lazy">`
+      : `<div class="thumb-placeholder">📀</div>`;
+    const langBadge = (p.lang && p.lang !== 'N/A')
+      ? `<span class="badge badge-lang">${esc(p.lang)}</span>`
+      : `<span style="color:#ccc;font-size:12px;">—</span>`;
+    return `<tr>
+      <td>${img}</td>
+      <td><span class="prod-name">${esc(p.title)}</span><span class="prod-id">ID #${p.id}</span></td>
+      <td><span class="badge badge-cat">${esc(p.cat)}</span></td>
+      <td>${langBadge}</td>
+      <td><span class="price-text">₹${Number(p.price).toLocaleString('en-IN')}</span></td>
+      <td>${stock === 0
+        ? `<span class="badge badge-oos">Out of Stock</span>`
+        : `<span class="badge badge-in">${stock} units</span>`}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">🗑️ Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   DELETE
+══════════════════════════════════════ */
+function deleteProduct(id) {
+  pendingDeleteId = id;
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+
+function closeConfirm() {
+  pendingDeleteId = null;
+  document.getElementById('confirmOverlay').classList.remove('open');
+}
+
+async function confirmDelete() {
+  if (pendingDeleteId === null) return;
+  const id = pendingDeleteId;
+  closeConfirm();
+  const { error } = await supabaseClient.from('products').delete().eq('id', id);
+  if (error) { toast('❌ Delete failed: ' + error.message); return; }
+  products = products.filter(p => p.id !== id);
+  updateStats(); renderTable();
+  toast('🗑️ Product deleted');
+}
+
+/* ══════════════════════════════════════
+   EXPORT CSV
+══════════════════════════════════════ */
+function exportCSV() {
+  if (!products.length) { toast('No products to export'); return; }
+  const rows = [
+    'ID,Title,Category,Language,Price,Stock,Description',
+    ...products.map(p => `"${p.id}","${(p.title||'').replace(/"/g,'""')}","${p.cat}","${p.lang}","${p.price}","${p.stock}","${(p.desc||'').replace(/"/g,'""')}"`)
+  ].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([rows], { type: 'text/csv' }));
+  a.download = 'johnmart_inventory_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+/* ══════════════════════════════════════
+   CLEAR ALL
+══════════════════════════════════════ */
+async function clearAll() {
+  if (!confirm('⚠️ DANGER: Delete ALL products permanently? This cannot be undone!')) return;
+  const ids = products.map(p => p.id);
+  if (!ids.length) return;
+  const { error } = await supabaseClient.from('products').delete().in('id', ids);
+  if (error) { toast('❌ Error: ' + error.message); return; }
+  products = [];
+  updateStats(); renderTable();
+  toast('🗑️ All products cleared');
+}
+
+/* ══════════════════════════════════════
+   ADD PRODUCT FORM
+══════════════════════════════════════ */
+function handleCatChange() {
+  const cat = document.getElementById('fCategory').value;
+  const langGroup = document.getElementById('langGroup');
+  if (cat === 'Accessories') {
+    langGroup.style.display = 'none';
+    document.getElementById('fLanguage').value = 'N/A';
+  } else {
+    langGroup.style.display = '';
+    if (document.getElementById('fLanguage').value === 'N/A')
+      document.getElementById('fLanguage').value = '';
+  }
+}
+
+function resetForm() {
+  ['fTitle','fCategory','fLanguage','fPrice','fDesc'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const s = document.getElementById('fStock'); if (s) s.value = 1;
+  document.getElementById('imgPreview').innerHTML = '';
+  document.getElementById('alertSuccess').style.display = 'none';
+  document.getElementById('alertError').style.display = 'none';
+  document.getElementById('langGroup').style.display = '';
+}
+
+const dropZone  = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('over');
+  processFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', e => processFiles(e.target.files));
+
+function processFiles(files) {
+  const preview = document.getElementById('imgPreview');
+  const existing = preview.querySelectorAll('.preview-thumb').length;
+  let added = 0;
+  Array.from(files).forEach(file => {
+    if ((existing + added) >= 5) { toast('Max 5 images allowed'); return; }
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 10 * 1024 * 1024) { toast(`${file.name} is too large (max 10MB)`); return; }
+    compressImage(file, dataUrl => {
+      const div = document.createElement('div');
+      div.className = 'preview-thumb';
+      div.innerHTML = `<img src="${dataUrl}"><button type="button" class="thumb-rm" onclick="this.parentElement.remove()">×</button>`;
+      preview.appendChild(div);
+    });
+    added++;
+  });
+}
+
+function compressImage(file, callback) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const TARGET_MAX = 300 * 1024;
+      const MAX_DIM    = 1200;
+      let w = img.width, h = img.height;
+      if (w > MAX_DIM || h > MAX_DIM) {
+        if (w >= h) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
+        else        { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      let quality = 0.85, dataUrl;
+      do {
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const bytes = Math.round((dataUrl.length - 22) * 3 / 4);
+        if (bytes <= TARGET_MAX || quality <= 0.40) break;
+        quality -= 0.05;
+      } while (true);
+      callback(dataUrl);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function handleUpload() {
+  const title = document.getElementById('fTitle').value.trim();
+  const cat   = document.getElementById('fCategory').value;
+  let   lang  = document.getElementById('fLanguage').value;
+  if (cat === 'Accessories' && !lang) lang = 'N/A';
+  const price = parseFloat(document.getElementById('fPrice').value);
+  const stock = parseInt(document.getElementById('fStock').value) || 1;
+  const desc  = document.getElementById('fDesc').value.trim();
+
+  const errEl = document.getElementById('alertError');
+  const showErr = msg => {
+    errEl.textContent = '✗ ' + msg;
+    errEl.style.display = 'block';
+    setTimeout(() => errEl.style.display = 'none', 4000);
+  };
+
+  if (!title)                     return showErr('Product title is required.');
+  if (!cat)                       return showErr('Please select a category.');
+  if (!lang)                      return showErr('Please select a language.');
+  if (isNaN(price) || price <= 0) return showErr('Please enter a valid price.');
+
+  const imgs = [];
+  document.querySelectorAll('#imgPreview .preview-thumb img').forEach(i => imgs.push(i.src));
+  if (!imgs.length) return showErr('Please upload at least one photo.');
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '⏳ Saving…';
+
+  const { error } = await supabaseClient.from('products').insert([{ title, cat, lang, price, stock, desc, images: imgs }]);
+
+  btn.disabled = false; btn.textContent = '💾 Save Product';
+
+  if (error) { showErr(error.message); return; }
+
+  document.getElementById('alertSuccess').style.display = 'block';
+  await loadProducts();
+  setTimeout(() => {
+    showTab('dashboard');
+    document.getElementById('alertSuccess').style.display = 'none';
+  }, 1400);
+}
+
+/* ══════════════════════════════════════
+   UTILITY
+══════════════════════════════════════ */
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeConfirm();
+});
+</script>
+</body>
+</html>
